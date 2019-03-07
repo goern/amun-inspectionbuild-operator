@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  tasks:
+    - debug: msg="Running Amun InspectionBuild Ansible Operator Playbook"
+
+    - name: "set name"
+      set_fact:
+        my_name: "{{ meta.name }}"
+      when: meta.name is not undefined
+
+    - name: "set namespace"
+      set_fact:
+        my_namespace: "{{ meta.namespace }}"
+      when: meta.namespace is not undefined
+
+    - name: "lookup Build"
+      set_fact:
+        build_name: "{{ lookup('k8s', api_version='v1', kind='Build', namespace=my_namespace, resource_name=my_name) }}"

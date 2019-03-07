@@ -3,3 +3,9 @@
   group: amun.thoth-station.ninja
   kind: InspectionBuild
   role: /opt/ansible/roles/inspectionbuild
+
+- version: v1
+  group: build.openshift.io
+  kind: Build
+  manageStatus: false
+  playbook: /opt/ansible/reconcile_inspectionbuild.yaml

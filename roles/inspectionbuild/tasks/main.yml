@@ -1,2 +1,96 @@
 ---
-# tasks file for inspectionbuild
+- name: "set name"
+  set_fact:
+    my_name: "{{ meta.name }}"
+  when: meta.name is not undefined
+
+- name: "set namespace"
+  set_fact:
+    my_namespace: "{{ meta.namespace }}"
+  when: meta.namespace is not undefined
+
+- name: "lookup Build"
+  set_fact:
+    build_name: "{{ lookup('k8s', api_version='v1', kind='Build', namespace=my_namespace, resource_name=my_name) }}"
+
+- name: "set phase"
+  set_fact:
+    inspection_build_phase: "New"
+  when: (build_name|length == 0)
+
+- name: "lookup ImageStream"
+  set_fact:
+    imagestream_name: "{{ lookup('k8s', api_version='v1', kind='ImageStream', namespace=my_namespace, resource_name=my_name) }}"
+
+- name: "create ImageStream for this InspectionBuild"
+  k8s:
+    definition:
+      apiVersion: image.openshift.io/v1
+      kind: ImageStream
+      metadata:
+        labels:
+          app: amun
+          component: amun-inspection-imagestream
+        name: "{{ meta.name }}"
+        namespace: "{{ meta.namespace }}"
+      spec:
+        name: latest
+        lookupPolicy:
+          local: true
+  when: (imagestream_name|length == 0)
+
+- name: "lookup BuildConfig"
+  set_fact:
+    buildconfig_name: "{{ lookup('k8s', api_version='v1', kind='BuildConfig', namespace=my_namespace, resource_name=my_name) }}"
+
+- name: "create BuildConfig for this InspectionBuild"
+  k8s:
+    definition:
+      kind: BuildConfig
+      apiVersion: build.openshift.io/v1
+      metadata:
+        name: "{{ meta.name }}"
+        namespace: "{{ meta.namespace }}"
+        labels:
+          app: amun
+          component: amun-inspection-buildconfig
+      spec:
+        output:
+          to:
+            kind: ImageStreamTag
+            name: "{{ meta.name }}:latest"
+        source:
+          type: Git
+          git:
+            uri: "{{ source.git.uri }}"
+            ref: "{{ source.git.ref }}"
+        resources:
+          requests:
+            cpu: "{{ resources.requests.cpu }}"
+            memory: "{{ resources.requests.memory }}"
+        strategy:
+          type: Source
+          sourceStrategy:
+            from:
+              kind: ImageStreamTag
+              name: "{{ source.strategy.name }}"
+        triggers:
+          - type: ConfigChange
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: CPU_FAMILY
+                      operator: In
+                      values:
+                        - "{{ resources.requests.cpu_family }}"
+                    - key: CPU_MODEL
+                      operator: In
+                      values:
+                        - "{{ resources.requests.cpu_model }}"
+                    - key: PHYSICAL_CPUS
+                      operator: In
+                      values:
+                        - "{{ resources.requests.physical_cpu_total }}"
+  when: (buildconfig_name|length == 0)

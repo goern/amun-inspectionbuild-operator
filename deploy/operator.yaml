@@ -15,9 +15,8 @@ spec:
       serviceAccountName: amun-inspectionbuild-operator
       containers:
         - name: amun-inspectionbuild-operator
-          # Replace this with the built image name
-          image: "{{ REPLACE_IMAGE }}"
-          imagePullPolicy: "{{ pull_policy|default('Always') }}"
+          image: "quay.io/goern/amun-inspectionbuild-operator:v0.1.0"
+          imagePullPolicy: "Always"
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

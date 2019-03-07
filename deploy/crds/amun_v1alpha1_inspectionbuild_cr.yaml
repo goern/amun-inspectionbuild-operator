@@ -1,7 +1,18 @@
 apiVersion: amun.thoth-station.ninja/v1alpha1
 kind: InspectionBuild
 metadata:
-  name: example-inspectionbuild
+  name: example-inspection-build
 spec:
-  # Add fields here
-  size: 3
+  source:
+    git:
+      uri: "https://github.com/thoth-station/....."
+      ref: "master"
+    strategy:
+      name: "python-36-centos7:latest"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+      cpu_family: 6
+      cpu_model: 94
+      physical_cpu_total: 2
